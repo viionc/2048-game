@@ -3,7 +3,7 @@ import Tile from "./Tile";
 import {slideDown, slideLeft, slideRight, slideUp} from "../movingLogic";
 import {addNumberToRandomTile, checkGameState} from "../helpers";
 
-const KEYS = ["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "W", "A", "S", "D"];
+const KEYS = ["arrowdown", "arrowup", "arrowleft", "arrowright", "w", "a", "s", "d"];
 const INITIAL_BOARD = [
     [0, 0, 0, 0],
     [0, 0, 0, 0],
@@ -24,25 +24,26 @@ function GameBoard() {
     const handleKeyDown = (e: KeyboardEvent) => {
         if (busy || gameState !== "ongoing") return;
         const {key} = e;
-        if (!KEYS.includes(key)) return;
+        const lowerCase = key.toLowerCase();
+        if (!KEYS.includes(lowerCase)) return;
         setBusy(true);
         const copy = [...board];
         let movedTile = false;
-        switch (key) {
-            case "ArrowDown":
-            case "S":
+        switch (lowerCase) {
+            case "arrowdown":
+            case "s":
                 movedTile = slideDown(copy);
                 break;
-            case "ArrowUp":
-            case "W":
+            case "arrowup":
+            case "w":
                 movedTile = slideUp(copy);
                 break;
-            case "ArrowLeft":
-            case "A":
+            case "arrowleft":
+            case "a":
                 movedTile = slideLeft(copy);
                 break;
-            case "ArrowRight":
-            case "D":
+            case "arrowright":
+            case "d":
                 movedTile = slideRight(copy);
                 break;
         }
