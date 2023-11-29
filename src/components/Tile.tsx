@@ -19,7 +19,7 @@ const colorsMap: Record<number, string> = {
 function Tile({number}: TileProps) {
     const color = colorsMap[number];
     return (
-        <div className="w-24 h-24 rounded-md flex justify-center items-center text-4xl" style={{backgroundColor: color}}>
+        <div className="w-16 h-16 md:w-24 md:h-24 rounded-md flex justify-center items-center text-2xl md:text-4xl" style={{backgroundColor: color}}>
             {number ? number : ""}
         </div>
     );

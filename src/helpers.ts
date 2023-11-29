@@ -1,4 +1,5 @@
 import {GameState} from "./components/GameBoard";
+import {slideDown, slideUp, slideLeft, slideRight} from "./movingLogic";
 
 export const addNumberToRandomTile = (boardCopy: number[][]) => {
     const emptyCells = boardCopy
@@ -35,4 +36,27 @@ export const checkGameState = (board: number[][]): GameState => {
         }
     }
     return "lost";
+};
+
+export const handleSlideTiles = (key: string, board: number[][]) => {
+    let movedTile = false;
+    switch (key) {
+        case "arrowdown":
+        case "s":
+            movedTile = slideDown(board);
+            break;
+        case "arrowup":
+        case "w":
+            movedTile = slideUp(board);
+            break;
+        case "arrowleft":
+        case "a":
+            movedTile = slideLeft(board);
+            break;
+        case "arrowright":
+        case "d":
+            movedTile = slideRight(board);
+            break;
+    }
+    return movedTile;
 };

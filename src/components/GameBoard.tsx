@@ -1,61 +1,65 @@
 import {useEffect, useMemo, useState} from "react";
 import Tile from "./Tile";
-import {slideDown, slideLeft, slideRight, slideUp} from "../movingLogic";
-import {addNumberToRandomTile, checkGameState} from "../helpers";
+import {addNumberToRandomTile, checkGameState, handleSlideTiles} from "../helpers";
 
-const KEYS = ["arrowdown", "arrowup", "arrowleft", "arrowright", "w", "a", "s", "d"];
+export type GameState = "won" | "lost" | "ongoing";
+export type Position = {x: number; y: number};
+
 const INITIAL_BOARD = [
     [0, 0, 0, 0],
     [0, 0, 0, 0],
     [0, 0, 0, 0],
     [0, 0, 0, 0],
 ];
-
-export type GameState = "won" | "lost" | "ongoing";
+const KEYS = ["arrowdown", "arrowup", "arrowleft", "arrowright", "w", "a", "s", "d"];
 
 function GameBoard() {
-    const [board, setBoard] = useState<number[][]>(INITIAL_BOARD);
+    const [board, setBoard] = useState<number[][]>(JSON.parse(JSON.stringify(INITIAL_BOARD)));
     const [busy, setBusy] = useState(false);
     const [gameState, setGameState] = useState<GameState>("ongoing");
+    const [touchStart, setTouchStart] = useState<Position>({x: 0, y: 0});
 
     const score = useMemo(() => board.flat().reduce((acc, cur) => acc + cur, 0), [board]);
     const bestScore = parseInt(localStorage.getItem("bestScore") || "0");
 
     const handleKeyDown = (e: KeyboardEvent) => {
-        if (busy || gameState !== "ongoing") return;
-        const {key} = e;
-        const lowerCase = key.toLowerCase();
-        if (!KEYS.includes(lowerCase)) return;
+        const lowerCase = e.key.toLowerCase();
+        if (busy || gameState !== "ongoing" || !KEYS.includes(lowerCase)) return;
+        moveTiles(lowerCase);
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+        const x = e.touches[0].clientX;
+        const y = e.touches[0].clientY;
+        setTouchStart({x, y});
+    };
+    const handleTouchEnd = (e: TouchEvent) => {
+        console.log(e);
+        const endX = e.changedTouches[0].clientX;
+        const endY = e.changedTouches[0].clientY;
+        const diffX = endX - touchStart.x;
+        const diffXAbs = Math.abs(diffX);
+        const diffY = endY - touchStart.y;
+        const diffYAbs = Math.abs(diffY);
+        if (Math.max(diffXAbs, diffYAbs) < 10) return;
+        const key = diffXAbs > diffYAbs ? (diffX > 0 ? "arrowright" : "arrowleft") : diffY > 0 ? "arrowdown" : "arrowup";
+        moveTiles(key);
+    };
+
+    const moveTiles = (key: string) => {
         setBusy(true);
         const copy = [...board];
-        let movedTile = false;
-        switch (lowerCase) {
-            case "arrowdown":
-            case "s":
-                movedTile = slideDown(copy);
-                break;
-            case "arrowup":
-            case "w":
-                movedTile = slideUp(copy);
-                break;
-            case "arrowleft":
-            case "a":
-                movedTile = slideLeft(copy);
-                break;
-            case "arrowright":
-            case "d":
-                movedTile = slideRight(copy);
-                break;
-        }
+        const movedTile = handleSlideTiles(key, copy);
         if (movedTile) {
             addNumberToRandomTile(copy);
             setBoard([...copy]);
         }
         setBusy(false);
     };
+
     const resetGame = () => {
         if (score > bestScore) localStorage.setItem("bestScore", score.toString());
-        const copy = [...INITIAL_BOARD];
+        const copy = JSON.parse(JSON.stringify(INITIAL_BOARD));
         addNumberToRandomTile(copy);
         setBoard([...copy]);
         setGameState("ongoing");
@@ -64,7 +68,13 @@ function GameBoard() {
     useEffect(() => {
         setGameState(checkGameState(board));
         window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
+        window.addEventListener("touchstart", handleTouchStart);
+        window.addEventListener("touchend", handleTouchEnd);
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("touchstart", handleTouchStart);
+            window.removeEventListener("touchend", handleTouchEnd);
+        };
     }, [board, busy]);
 
     useEffect(() => {
@@ -75,9 +85,10 @@ function GameBoard() {
 
     return (
         <>
-            <h1>
-                Score: {score} Best: {bestScore}
-            </h1>
+            <div className="w-full flex justify-center items-center flex-col md:flex-row md:gap-4">
+                <h1>Score: {score}</h1>
+                <h1>Best: {bestScore}</h1>
+            </div>
             <div className="p-4 bg-zinc-700 rounded-lg grid grid-rows-4 gap-2">
                 {board.map((row, i) => (
                     <div className="flex gap-2" key={i}>
@@ -92,6 +103,7 @@ function GameBoard() {
                     <h2>Game {gameState === "lost" ? "Lost" : "Won"}</h2> <button onClick={resetGame}>Reset</button>
                 </div>
             )}
+            <p>Controls: Arrow Keys, WSAD or Touch Screen</p>
         </>
     );
 }
